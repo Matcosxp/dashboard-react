@@ -4,13 +4,12 @@
 =========================================================
 */
 
-// react-router-dom components
+// Importazioni
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-
-// Firebase Authentication
+import { useNavigate } from "react-router-dom";
 import { createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
-import { auth } from "firebase.js"; // Assicurati che il percorso sia corretto
+import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { auth } from "firebase.js"; // Percorso corretto al file Firebase
 
 // @mui material components
 import Card from "@mui/material/Card";
@@ -25,38 +24,52 @@ import MDButton from "components/MDButton";
 // Authentication layout components
 import CoverLayout from "layouts/authentication/components/CoverLayout";
 
-// Images
+// Immagini
 import bgImage from "assets/images/bg-sign-up-cover.jpeg";
 
-function Cover() {
+// Inizializza Firestore
+const db = getFirestore();
+
+function SignUp() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [serialNumber, setSerialNumber] = useState(""); // Nuovo stato per il numero di serie
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const navigate = useNavigate(); // Per reindirizzare dopo la registrazione
+  const navigate = useNavigate();
 
   const handleRegister = async (event) => {
-    event.preventDefault(); // Evita il refresh della pagina
+    event.preventDefault();
+
     if (!agreeTerms) {
       alert("Devi accettare i Termini e Condizioni per registrarti.");
       return;
     }
 
     try {
+      console.log("Inizio registrazione...");
+
       // Crea un nuovo utente con Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log("Utente creato:", user);
 
-      // Invia l'email di verifica
+      // Salva i dati utente su Firestore
+      await setDoc(doc(db, "users", user.uid), {
+        email: user.email,
+        name: name || "Anonymous",
+        role: "user", // Ruolo predefinito
+        serialNumber, // Salva il numero di serie
+        createdAt: new Date().toISOString(),
+      });
+
+      console.log("Dati utente salvati su Firestore.");
+
+      // Invia email di verifica
       await sendEmailVerification(user);
-      alert(
-        "Registrazione completata con successo! Controlla la tua email per verificare il tuo account."
-      );
+      console.log("Email di verifica inviata.");
 
-      // Puoi salvare il nome dell'utente nel database se necessario
-      // Esempio: user.displayName = name;
-
-      // Reindirizza alla pagina di login
+      alert("Registrazione completata! Controlla la tua email per verificare il tuo account.");
       navigate("/authentication/sign-in");
     } catch (error) {
       console.error("Errore durante la registrazione:", error.message);
@@ -82,7 +95,7 @@ function Cover() {
             Join us today
           </MDTypography>
           <MDTypography display="block" variant="button" color="white" my={1}>
-            Enter your email and password to register
+            Enter your email, password, and machine serial number to register
           </MDTypography>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>
@@ -117,6 +130,16 @@ function Cover() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </MDBox>
+            <MDBox mb={2}>
+              <MDInput
+                type="text"
+                label="Machine Serial Number"
+                variant="standard"
+                fullWidth
+                value={serialNumber}
+                onChange={(e) => setSerialNumber(e.target.value)}
+              />
+            </MDBox>
             <MDBox display="flex" alignItems="center" ml={-1}>
               <Checkbox checked={agreeTerms} onChange={() => setAgreeTerms(!agreeTerms)} />
               <MDTypography
@@ -148,8 +171,8 @@ function Cover() {
               <MDTypography variant="button" color="text">
                 Already have an account?{" "}
                 <MDTypography
-                  component={Link}
-                  to="/authentication/sign-in"
+                  component="a"
+                  href="/authentication/sign-in"
                   variant="button"
                   color="info"
                   fontWeight="medium"
@@ -166,4 +189,4 @@ function Cover() {
   );
 }
 
-export default Cover;
+export default SignUp;

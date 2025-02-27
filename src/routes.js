@@ -24,7 +24,7 @@ const routes = [
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
     component: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={["user", "admin"]}>
         <Dashboard />
       </PrivateRoute>
     ),
@@ -36,7 +36,7 @@ const routes = [
     icon: <Icon fontSize="small">table_view</Icon>,
     route: "/tables",
     component: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={["user", "admin"]}>
         <Tables />
       </PrivateRoute>
     ),
@@ -48,7 +48,7 @@ const routes = [
     icon: <Icon fontSize="small">receipt_long</Icon>,
     route: "/billing",
     component: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={["user", "admin"]}>
         <Billing />
       </PrivateRoute>
     ),
@@ -60,7 +60,7 @@ const routes = [
     icon: <Icon fontSize="small">format_textdirection_r_to_l</Icon>,
     route: "/rtl",
     component: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={["user", "admin"]}>
         <RTL />
       </PrivateRoute>
     ),
@@ -72,7 +72,7 @@ const routes = [
     icon: <Icon fontSize="small">notifications</Icon>,
     route: "/notifications",
     component: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={["user", "admin"]}>
         <Notifications />
       </PrivateRoute>
     ),
@@ -84,7 +84,7 @@ const routes = [
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
     component: (
-      <PrivateRoute>
+      <PrivateRoute allowedRoles={["user", "admin"]}>
         <Profile />
       </PrivateRoute>
     ),

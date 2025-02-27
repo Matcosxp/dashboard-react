@@ -4,24 +4,17 @@
 =========================================================
 */
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from "firebase/auth";
+import { signInWithEmailAndPassword, signOut } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { auth } from "firebase.js";
-
-// react-router-dom components
-import { Link } from "react-router-dom";
 
 // @mui material components
 import Card from "@mui/material/Card";
 import Switch from "@mui/material/Switch";
 import Grid from "@mui/material/Grid";
 import MuiLink from "@mui/material/Link";
-
-// @mui icons
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@mui/icons-material/Google";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -35,7 +28,10 @@ import BasicLayout from "layouts/authentication/components/BasicLayout";
 // Images
 import bgImage from "assets/images/bg-sign-in-basic.jpeg";
 
-function Basic() {
+// Inizializza Firestore
+const db = getFirestore();
+
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -45,35 +41,36 @@ function Basic() {
 
   const handleLogin = async (event) => {
     event.preventDefault();
+
     try {
+      console.log("Tentativo di login...");
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-
-      if (!user.emailVerified) {
-        alert("Per favore, verifica la tua email prima di accedere.");
-        return;
-      }
-
       console.log("Login riuscito:", user);
 
-      if (rememberMe) {
-        localStorage.setItem("user", JSON.stringify(user));
-      }
+      // Recupera i dati dell'utente da Firestore
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        console.log("Dati utente:", userData);
 
-      navigate("/dashboard");
+        // Salva il ruolo e il numero di serie nel localStorage o nel contesto globale
+        localStorage.setItem("role", userData.role);
+        localStorage.setItem("serialNumber", userData.serialNumber);
+
+        // Reindirizza in base al ruolo
+        if (userData.role === "admin") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
+      } else {
+        console.error("Documento utente non trovato!");
+        alert("Errore durante il recupero dei dati utente.");
+      }
     } catch (error) {
       console.error("Errore durante il login:", error.message);
       alert("Email o password errati. Riprova.");
-    }
-  };
-
-  const handleResetPassword = async () => {
-    try {
-      await sendPasswordResetEmail(auth, email);
-      alert("Email di reset inviata! Controlla la tua casella di posta.");
-    } catch (error) {
-      console.error("Errore durante il reset della password:", error.message);
-      alert("Errore durante il reset della password. Verifica l'email inserita.");
     }
   };
 
@@ -97,17 +94,7 @@ function Basic() {
           <Grid container spacing={3} justifyContent="center" sx={{ mt: 1, mb: 2 }}>
             <Grid item xs={2}>
               <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <FacebookIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <GitHubIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <GoogleIcon color="inherit" />
+                {/* Icone di social login */}
               </MDTypography>
             </Grid>
           </Grid>
@@ -150,35 +137,10 @@ function Basic() {
               </MDButton>
             </MDBox>
           </MDBox>
-          <MDBox mt={3} mb={1} textAlign="center">
-            <MDTypography
-              variant="button"
-              color="info"
-              sx={{ cursor: "pointer" }}
-              onClick={handleResetPassword}
-            >
-              Forgot password?
-            </MDTypography>
-          </MDBox>
-          <MDBox mt={3} mb={1} textAlign="center">
-            <MDTypography variant="button" color="text">
-              Don&apos;t have an account?{" "}
-              <MDTypography
-                component={Link}
-                to="/authentication/sign-up"
-                variant="button"
-                color="info"
-                fontWeight="medium"
-                textGradient
-              >
-                Sign up
-              </MDTypography>
-            </MDTypography>
-          </MDBox>
         </MDBox>
       </Card>
     </BasicLayout>
   );
 }
 
-export default Basic;
+export default Login;
